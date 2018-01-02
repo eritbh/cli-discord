@@ -484,6 +484,9 @@ class DiscordInterface {
 				if (role) return `@${role.name}`
 				return match
 			})
+			.replace(/<(a?):([a-z0-9_]+):(\d+)>/gi, (animated, match, name, id) => { // Replace emotes
+				return `:${name}:`
+			})
 	}
 
 	// https://stackoverflow.com/a/14502311
