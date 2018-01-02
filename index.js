@@ -446,8 +446,13 @@ class DiscordInterface {
 	}
 
 	messageLine (msg) {
-		const nameLength = 10
-		const author = blessed.escape(msg.author.nick || msg.author.username).substr(0, nameLength).padStart(nameLength)
+		const nameLength = 14
+
+		let author = blessed.escape(msg.author.nick || msg.author.username).substr(0, nameLength).padStart(nameLength)
+		if (msg.author.id === c.user.id) {
+			author = `{bold}${author}`
+		}
+
 		const maxMessageWidth = this.messagesBox.width - nameLength - 1 - 2
 		let content = blessed.escape(msg.content)
 		content = content.split('\n').map((contentLine, contentLineIndex) => {
