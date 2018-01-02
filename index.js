@@ -91,18 +91,20 @@ class DiscordInterface {
 			invertSelected: false
 		})
 		this.guildsList.key(['up', 'k'], () => {
-			console.error('up on guilds')
 			this.guildsList.up()
-			this.screen.render()
-		})
-		this.guildsList.key(['down', 'j'], () => {
-			console.error('down on guilds')
-			this.guildsList.down()
-			this.screen.render()
-		})
-		this.guildsList.key(['enter', 'space'], () => {
 			this.updateSelectedGuildFromList()
 		})
+		this.guildsList.key(['down', 'j'], () => {
+			this.guildsList.down()
+			this.updateSelectedGuildFromList()
+		})
+		this.guildsList.key('z', () => {
+			this.guildsList.select(this.guilds.indexOf(this.selectedGuildIndex))
+			this.screen.render()
+		})
+		// this.guildsList.key(['enter', 'space'], () => {
+		// 	this.updateSelectedGuildFromList()
+		// })
 		this.guildsList.focus()
 
 		this.channelsList = blessed.list({
@@ -234,7 +236,6 @@ class DiscordInterface {
 
 	set selectedGuild (guild) {
 		this._selectedGuild = guild
-		// console.error('Changing selected guild:\n', guild.name)
 		if (guild) {
 			this.channels = guild.channels
 		} else {
@@ -329,9 +330,8 @@ class DiscordInterface {
 	updateSelectedGuildFromList () {
 		const index = this.guildsList.selected
 		this.selectedGuild = this.guilds[index]
-		console.error('Selected guild:', index)
 		this.channelsList.select(0)
-		this.updateSelectedChannelFromList()
+		this.screen.render()
 	}
 
 	updateSelectedChannelFromList () {
