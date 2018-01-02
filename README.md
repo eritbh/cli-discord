@@ -7,6 +7,9 @@ A Discord command line interface that allows you to log in as your bot. Built in
 ```bash
 $ git clone https://github.com/Geo1088/cli-discord.git
 $ cd cli-discord
+$ cp config_sample.json config.json
+$ # Fill out config.json
+$ yarn # or npm install
 $ yarn start # or npm start
 ```
 
