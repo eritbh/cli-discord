@@ -1,0 +1,12 @@
+{
+  "name": "cli-discord",
+  "version": "0.0.0",
+  "main": " ",
+  "repository": "https://github.com/Geo1088/cli-discord",
+  "author": "Geo1088 <georgej1088@gmail.com>",
+  "license": "MIT",
+  "dependencies": {
+    "blessed": "^0.1.81",
+    "eris": "^0.8.1"
+  }
+}
