@@ -1,6 +1,7 @@
 const blessed = require('blessed')
 const Eris = require('eris')
-const c = new Eris(require('./config').token, {
+const config = require('./config')
+const c = new Eris(config.token, {
 	guildCreateTimeout: 10000
 })
 
@@ -446,19 +447,17 @@ class DiscordInterface {
 	}
 
 	messageLine (msg) {
-		const nameLength = 14
-
-		let author = blessed.escape(msg.author.nick || msg.author.username).substr(0, nameLength).padStart(nameLength)
+		let author = blessed.escape(msg.author.nick || msg.author.username).substr(0, config.nameLength).padStart(config.nameLength)
 		if (msg.author.id === c.user.id) {
 			author = `{bold}${author}`
 		}
 
-		const maxMessageWidth = this.messagesBox.width - nameLength - 1 - 2
+		const maxMessageWidth = this.messagesBox.width - config.nameLength - 1 - 2
 		let content = blessed.escape(msg.content)
 		content = content.split('\n').map((contentLine, contentLineIndex) => {
 			return this.wrappedLines(contentLine, maxMessageWidth).map((visualLine, visualLineIndex) => {
 				if (contentLineIndex === 0 && visualLineIndex === 0) return visualLine
-				return Array(nameLength + 1).fill(' ').join('') + visualLine
+				return Array(config.nameLength + 1).fill(' ').join('') + visualLine
 			}).join('\n')
 		}).join('\n')
 		content = this.addMessageColors(content)

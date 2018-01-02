@@ -1,3 +1,5 @@
 {
-  "token": "discord token"
+  "token": "discord token",
+
+  "nameLength": 14
 }
