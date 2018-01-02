@@ -463,10 +463,20 @@ class DiscordInterface {
 
 	addMessageColors (message) {
 		return message
-			.replace(/<@!?(\d+)>/g, '{bold}{cyan-fg}$&{/}') // User mention highlights
-			.replace(/<@(!?)(\d+)>/g, (match, useNick, id) => {
+			.replace(/<(#|@[!&?])(\d+)>|@everyone|@here/g, '{bold}{cyan-fg}$&{/}') // Highlight mentions
+			.replace(/<@(!?)(\d+)>/g, (match, useNick, id) => { // Replace user mentions
 				const member = this.selectedGuild.members.get(id)
 				if (member) return `@${useNick ? member.nick : member.username}`
+				return match
+			})
+			.replace(/<#(\d+)>/g, (match, id) => { // Replace channel mentions
+				const channel = this.selectedGuild.channels.get(id)
+				if (channel && channel.type === 0) return `#${channel.name}`
+				return `{gray-fg}#deleted-channel{/gray-fg}`
+			})
+			.replace(/<@&(\d+)>/g, (match, id) => { // Replace role mentions
+				const role = this.selectedGuild.roles.get(id)
+				if (role) return `@${role.name}`
 				return match
 			})
 	}
