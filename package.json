@@ -1,7 +1,10 @@
 {
   "name": "cli-discord",
   "version": "0.0.0",
-  "main": " ",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js 2> log.log"
+  },
   "repository": "https://github.com/Geo1088/cli-discord",
   "author": "Geo1088 <georgej1088@gmail.com>",
   "license": "MIT",
