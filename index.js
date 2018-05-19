@@ -15,35 +15,43 @@ function escapeSubs (strings, ...subs) {
 	return result
 }
 
+function forceLength (string, length, align = 'left') {
+	if (align === 'left') {
+		string = string.padEnd(length)
+	} else if (align === 'right') {
+		string = string.padStart(length)
+	} else if (align === 'center' && string.length < length) {
+		const leftOverLength = length - string.length
+		string = string.padStart(Math.floor(leftOverLength / 2 + string.length)).padEnd(length)
+	} else {
+		throw new TypeError("alignment must be one of 'left', 'center', 'right' (default is 'left')")
+	}
+	if (string.length > length) {
+		string = string.slice(0, length - 1) + '…'
+	}
+	return string
+}
+
 // Set up interface //
 
 const STYLES = {
 	guildsChannels: {
-		fg: '#ffffff',
-		bg: '#222222'
 	},
 	guildsChannelsList: {
-		fg: '#ffffff',
-		bg: '#222222',
 		selected: {
-			fg: '#ffffff',
-			bg: '#666666',
-			bold: true
+			fg: 'black',
+			bg: 'white'
 		}
 	},
 	messagesFrame: {
-		fg: '#ffffff',
-		bg: '#080808'
 	},
 	messagesBox: {
-		fg: '#ffffff',
-		bg: '#080808',
 	},
 	messagesBoxScrollbar: {
-		bg: '#ffffff'
+		bg: 'gray'
 	},
 	messagesBoxScrollbarTrack: {
-		bg: 'gray'
+		bg: 'white'
 	}
 }
 
@@ -58,7 +66,7 @@ class DiscordInterface {
 
 		this.screen = blessed.screen({
 			smartCSR: true,
-			// fullUnicode: true,
+			fullUnicode: false,
 			title: 'Discord CLI'
 		})
 
@@ -162,9 +170,9 @@ class DiscordInterface {
 		this.messagesBox = blessed.box({
 			parent: this.messagesFrame,
 			top: 1,
-			left: 1,
-			width: '100%-1',
-			height: '100%-1',
+			left: 0,
+			width: '100%',
+			height: '100%',
 			scrollable: true,
 			alwaysScroll: true,
 			tags: true,
@@ -187,6 +195,27 @@ class DiscordInterface {
 			this.messagesBox.setScrollPerc(100)
 			this.screen.render()
 		})
+		// this.currentUserName = blessed.box({
+		// 	parent: this.messagesFrame,
+		// 	bottom: 0,
+		// 	left: 0,
+		// 	width: config.nameLength + 1,
+		// 	height: 1,
+		// 	tags: true,
+		// 	style: {
+		// 		bg: 'gray'
+		// 	}
+		// })
+		// this.messageComposeLine = blessed.box({
+		// 	parent: this.messagesFrame,
+		// 	bottom: 0,
+		// 	left: config.nameLength + 1,
+		// 	width: '100%',
+		// 	height: 1,
+		// 	style: {
+		// 		bg: 'gray'
+		// 	}
+		// })
 
 		this.screen.key('g', (ch, key) => {
 			this.guildsList.focus()
@@ -269,17 +298,17 @@ class DiscordInterface {
 	}
 
 	textForGuildsFrame (focused = this.focusedPanel === 'guilds') {
-		const firstLine = this.header(`${focused ? '{green-fg}' : ''}Guilds (${(this.guilds || []).length})${focused ? '{/}' : ''}`, SIZES.guildsWidth, '═', '╤')
+		const firstLine = this.header(`${focused ? '{green-fg}{underline}' : ''}[G]uilds (${(this.guilds || []).length})${focused ? '{/}' : ''}`, SIZES.guildsWidth, '═', '╤')
 		const secondLine = ''.padEnd(SIZES.guildsWidthInside) + '│'
-		const lines = Array(this.guildsFrame.height - 1).fill(secondLine)
+		const lines = Array(this.guildsFrame.height).fill(secondLine)
 		lines.unshift(firstLine)
 		return lines.join('\n')
 	}
 
 	textForChannelsFrame (focused = this.focusedPanel === 'channels') {
-		const firstLine = this.header(`${focused ? '{green-fg}' : ''}Channels (${(this.channels || []).length})${focused ? '{/}' : ''}`, SIZES.guildsWidth, '═', '╡')
+		const firstLine = this.header(`${focused ? '{green-fg}{underline}' : ''}[C]hannels (${(this.channels || []).length})${focused ? '{/}' : ''}`, SIZES.guildsWidth, '═', '╡')
 		const secondLine = ''.padEnd(SIZES.guildsWidthInside) + '│'
-		const lines = Array(this.guildsFrame.height - 1).fill(secondLine)
+		const lines = Array(this.guildsFrame.height).fill(secondLine)
 		lines.unshift(firstLine)
 		return lines.join('\n')
 	}
@@ -298,12 +327,12 @@ class DiscordInterface {
 		} else {
 			channelName = 'No channel'
 		}
-		return this.header(`${focused ? '{green-fg}' : ''}{underline}${guildName}{/underline} > {underline}${channelName}{/underline}${focused ? '{/yellow-fg}' : ''}`, this.messagesFrame.width, '═', '═')
+		return this.header(`${focused ? '{green-fg}{underline}' : ''}[M] ${guildName} > ${channelName}{/}`, this.messagesFrame.width, '═', '═')
 	}
 
 	guildLine (guild, index) {
 		console.error(guild ? guild.name : 'oh shit ' + guild)
-		let line = '{gray-fg}'
+		let line = '{bold}'
 
 		// Number
 		if (index < 9) {
@@ -318,12 +347,7 @@ class DiscordInterface {
 		// Cut name to the space remaining
 		// magic number 3: number, unread indicator, space on the left
 		const maxNameLength = SIZES.guildsWidthInside - 2
-		let guildName
-		if (guild.name.length > maxNameLength) {
-			guildName = guild.name.substr(0, maxNameLength - 1) + '…'
-		} else {
-			guildName = guild.name
-		}
+		let guildName = blessed.escape(forceLength(guild.name, maxNameLength))
 		line += guildName
 		return line
 	}
@@ -344,7 +368,7 @@ class DiscordInterface {
 
 	channelLine (channel, index, list) {
 		// Indexing excludes channel categories
-		let prefix = '{gray-fg}'
+		let prefix = '{bold}'
 		let suffix = ''
 		if (channel.type === 0) {
 			// Text channel
@@ -373,10 +397,10 @@ class DiscordInterface {
 		}
 		channelName = blessed.escape(channelName)
 
-		if (channel.type === 4) {
-			prefix = `{gray-fg}${prefix}`
-			channelName += '{/gray-fg}'
-		}
+		// if (channel.type === 4) {
+		// 	prefix = `{gray-fg}${prefix}`
+		// 	channelName += '{/gray-fg}'
+		// }
 
 		return `${prefix}${channelName}`
 	}
@@ -385,7 +409,7 @@ class DiscordInterface {
 		const titleLessFormatting = blessed.stripTags(title)
 		const extraCharacters = title.length - titleLessFormatting.length
 		if (width < 5) return `${left}${''.padEnd(width - 2, segment)}${right}`
-		const paddedTitle = ` ${title} `.padEnd(width - 2 + extraCharacters, segment)
+		const paddedTitle = ` ${title} `.padEnd(width - 2 + extraCharacters, segment).replace(title, '{bold}$&{/}')
 		return `${left}${paddedTitle}${right}`
 	}
 
@@ -411,12 +435,12 @@ class DiscordInterface {
 
 	getMessages () {
 		if (!this.selectedChannel || this.selectedChannel.type !== 0) {
-			this.messagesBox.setContent('\n{center}{gray-fg}There are no messages here.{/}')
+			this.messagesBox.setContent('\n{center}{bold}{red-fg}There are no messages here.{/}')
 			return
 		}
 		const id = this.selectedChannel.id
 		if (!this.messageCache[id]) {
-			this.messagesBox.setContent('\n{center}Loading...{/}')
+			this.messagesBox.setContent('\n{center}{bold}Loading...{/}')
 			this.screen.render()
 			c.getMessages(id).then(messages => {
 				messages = messages.sort((a, b) => parseInt(a.id, 10) - parseInt(b.id, 10))
@@ -435,7 +459,7 @@ class DiscordInterface {
 		const messages = this.messageCache[this.selectedChannel.id]
 		this.messagesBox.setContent('')
 		if (messages === 1) {
-			this.messagesBox.setContent("\n{center}{gray-fg}You don't have permission to view this channel.{/}")
+			this.messagesBox.setContent("\n{center}{bold}{red-fg}You don't have permission to view this channel.{/}")
 			this.screen.render()
 			return
 		}
@@ -467,40 +491,40 @@ class DiscordInterface {
 
 	addMessageColors (message) {
 		return message
-			.replace(/<(#|@[!&?])(\d+)>|@everyone|@here/g, '{bold}{cyan-fg}$&{/}') // Highlight mentions
-			.replace(/<@(!?)(\d+)>/g, (match, useNick, id) => { // Replace user mentions
+			.replace(/<(#|@[!&]?)(\d+)>|@everyone|@here/g, '{bold}{cyan-fg}$&{/}') // Highlight all mentions
+			.replace(/<@(!?)(\d+)>/g, (match, useNick, id) => { // Replace user mentions with username/nick
 				const member = this.selectedGuild.members.get(id)
-				if (member) return `@${useNick ? member.nick : member.username}`
+				if (member) return escapeSubs`@${useNick ? member.nick : member.username}`
 				return match
 			})
-			.replace(/<#(\d+)>/g, (match, id) => { // Replace channel mentions
+			.replace(/<#(\d+)>/g, (match, id) => { // Replace channel mentions with channel name
 				const channel = this.selectedGuild.channels.get(id)
-				if (channel && channel.type === 0) return `#${channel.name}`
-				return `{gray-fg}#deleted-channel{/gray-fg}`
+				if (channel && channel.type === 0) return escapeSubs`#${channel.name}`
+				return `#deleted-channel`
 			})
 			.replace(/<@&(\d+)>/g, (match, id) => { // Replace role mentions
 				const role = this.selectedGuild.roles.get(id)
-				if (role) return `@${role.name}`
-				return match
+				if (role) return escapeSubs`@${role.name}`
+				return `@deleted-role`
 			})
 			.replace(/<(a?):([a-z0-9_]+):(\d+)>/gi, (animated, match, name, id) => { // Replace emotes
-				return `:${name}:`
+				return escapeSubs`{green-fg}:${name}:{/}`
 			})
 	}
 
 	// https://stackoverflow.com/a/14502311
 	wrappedLines (str, width) {
-    if (str.length>width) {
-			let p = width
-			while (p && str[p] !== ' ') {
-				p--
-			}
-			if (!p) p = width
-			const left = str.substring(0, p)
-			const right = str.substring(p+1)
-			return [left, ...this.wrappedLines(right, width)]
-    }
-    return [str]
+	    if (str.length>width) {
+				let p = width
+				while (p && str[p] !== ' ') {
+					p--
+				}
+				if (!p) p = width
+				const left = str.substring(0, p)
+				const right = str.substring(p+1)
+				return [left, ...this.wrappedLines(right, width)]
+	    }
+	    return [str]
 	}
 
 	pushMessage (msg) {
@@ -518,6 +542,7 @@ const messageCache = {}
 c.on('ready', () => {
 	updateGuildsFromBot()
 	ui.screen.title = `Discord CLI - ${c.user.username}#${c.user.discriminator} - ${c.guilds.size} guilds`
+	// ui.currentUserName.setContent(escapeSubs`{yellow-fg}{bold}${forceLength(c.user.username, config.nameLength)}{/}`)
 })
 function updateGuildsFromBot () {
 	if (c.bot) {
